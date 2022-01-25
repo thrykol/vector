@@ -16,7 +16,6 @@ use crate::{
     },
 };
 use bytes::BytesMut;
-use tokio_util::codec::Encoder;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Migrator;
@@ -96,7 +95,6 @@ impl SinkConfig for SocketSinkConfig {
         let encoder = encoding::Encoder::new(framer, serializer);
         let encode_event = move |mut event| {
             transformer.transform(&mut event);
-            let mut encoder = encoder.clone();
             let mut buffer = BytesMut::new();
             encoder
                 .encode(event, &mut buffer)
