@@ -1,8 +1,9 @@
-use diagnostic::{DiagnosticError, Label, Note};
 use std::{
     collections::{BTreeMap, HashMap},
     fmt,
 };
+
+use diagnostic::{DiagnosticError, Label, Note};
 
 use crate::{
     expression::{
@@ -18,7 +19,7 @@ pub type Compiled = Result<Box<dyn Expression>, Box<dyn DiagnosticError>>;
 pub type CompiledArgument =
     Result<Option<Box<dyn std::any::Any + Send + Sync>>, Box<dyn DiagnosticError>>;
 
-pub trait Function: Sync + fmt::Debug {
+pub trait Function: Send + Sync + fmt::Debug {
     /// The identifier by which the function can be called.
     fn identifier(&self) -> &'static str;
 
@@ -67,6 +68,7 @@ pub trait Function: Sync + fmt::Debug {
     fn compile_argument(
         &self,
         _args: &[(&'static str, Option<FunctionArgument>)],
+        _info: &FunctionCompileContext,
         _name: &str,
         _expr: Option<&Expr>,
     ) -> Result<Option<Box<dyn std::any::Any + Send + Sync>>, Box<dyn DiagnosticError>> {
@@ -74,7 +76,7 @@ pub trait Function: Sync + fmt::Debug {
     }
 
     /// This function is called by the VM.
-    fn call(
+    fn call_by_vm(
         &self,
         _ctx: &mut Context,
         _args: &mut VmArgumentList,
@@ -394,7 +396,7 @@ impl diagnostic::DiagnosticError for Error {
                     format!(r#"invalid enum variant for argument "{}""#, keyword),
                     Span::default(),
                 ),
-                Label::context(format!("received: {}", value.to_string()), Span::default()),
+                Label::context(format!("received: {}", value), Span::default()),
                 Label::context(
                     format!(
                         "expected one of: {}",
@@ -425,7 +427,7 @@ impl diagnostic::DiagnosticError for Error {
                     format!(r#"invalid argument "{}""#, keyword),
                     Span::default(),
                 ),
-                Label::context(format!("received: {}", value.to_string()), Span::default()),
+                Label::context(format!("received: {}", value), Span::default()),
                 Label::context(format!("error: {}", error), Span::default()),
             ],
         }

@@ -140,6 +140,7 @@ impl Function for ParseUserAgent {
     fn compile_argument(
         &self,
         _args: &[(&'static str, Option<FunctionArgument>)],
+        _info: &FunctionCompileContext,
         name: &str,
         expr: Option<&expression::Expr>,
     ) -> CompiledArgument {
@@ -205,7 +206,7 @@ impl Function for ParseUserAgent {
         }
     }
 
-    fn call(&self, _ctx: &mut Context, args: &mut VmArgumentList) -> Resolved {
+    fn call_by_vm(&self, _ctx: &mut Context, args: &mut VmArgumentList) -> Resolved {
         let value = args.required("value");
         let string = value.try_bytes_utf8_lossy()?;
         let parser = args

@@ -94,6 +94,7 @@ impl Function for Del {
     fn compile_argument(
         &self,
         _args: &[(&'static str, Option<FunctionArgument>)],
+        _info: &FunctionCompileContext,
         name: &str,
         expr: Option<&expression::Expr>,
     ) -> CompiledArgument {
@@ -116,7 +117,7 @@ impl Function for Del {
         }
     }
 
-    fn call(&self, ctx: &mut Context, args: &mut VmArgumentList) -> Resolved {
+    fn call_by_vm(&self, ctx: &mut Context, args: &mut VmArgumentList) -> Resolved {
         let query = args
             .required_any("target")
             .downcast_ref::<expression::Query>()

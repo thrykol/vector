@@ -1,3 +1,7 @@
+use std::{fmt, sync::Arc};
+
+use diagnostic::{DiagnosticError, Label, Note, Urls};
+
 use crate::{
     expression::{levenstein, ExpressionError, FunctionArgument, Noop},
     function::{ArgumentList, FunctionCompileContext, Parameter},
@@ -6,8 +10,6 @@ use crate::{
     vm::OpCode,
     Context, Expression, Function, Resolved, Span, State, TypeDef,
 };
-use diagnostic::{DiagnosticError, Label, Note, Urls};
-use std::{fmt, sync::Arc};
 
 #[derive(Clone)]
 pub struct FunctionCall {
@@ -35,7 +37,7 @@ impl FunctionCall {
         ident: Node<Ident>,
         abort_on_error: bool,
         arguments: Vec<Node<FunctionArgument>>,
-        funcs: &[Box<dyn Function + Send + Sync>],
+        funcs: &[Box<dyn Function>],
         state: &mut State,
     ) -> Result<Self, Error> {
         let (ident_span, ident) = ident.take();
@@ -200,9 +202,9 @@ impl FunctionCall {
     /// catch these whilst creating the AST.
     fn resolve_arguments(
         &self,
-        function: &(dyn Function + Send + Sync),
+        function: &(dyn Function),
     ) -> Result<Vec<(&'static str, Option<FunctionArgument>)>, String> {
-        let params = function.parameters().iter().collect::<Vec<_>>();
+        let params = function.parameters().to_vec();
         let mut result = params
             .iter()
             .map(|param| (param.keyword, None))
@@ -276,7 +278,7 @@ impl FunctionCall {
 
 impl Expression for FunctionCall {
     fn resolve(&self, ctx: &mut Context) -> Resolved {
-        (*self.expr).resolve(ctx).map_err(|err| match err {
+        self.expr.resolve(ctx).map_err(|err| match err {
             ExpressionError::Abort { .. } => {
                 panic!("abort errors must only be defined by `abort` statement")
             }
@@ -379,6 +381,8 @@ impl Expression for FunctionCall {
             None => return Err(format!("Function {} not found.", self.function_id)),
         };
 
+        let compile_ctx = FunctionCompileContext { span: self.span };
+
         for (keyword, argument) in &args {
             let fun = vm.function(self.function_id).unwrap();
             let argument = argument.as_ref().map(|argument| argument.inner());
@@ -386,18 +390,18 @@ impl Expression for FunctionCall {
             // Call `compile_argument` for functions that need to perform any compile time processing
             // on the argument.
             match fun
-                .compile_argument(&args, keyword, argument)
+                .compile_argument(&args, &compile_ctx, keyword, argument)
                 .map_err(|err| err.to_string())?
             {
                 Some(stat) => {
-                    // The function has compiled this argument as a static
+                    // The function has compiled this argument as a static.
                     let stat = vm.add_static(stat);
                     vm.write_opcode(OpCode::MoveStaticParameter);
                     vm.write_primitive(stat);
                 }
                 None => match argument {
                     Some(argument) => {
-                        // Compile the argument, MoveParameter will move the result of the expression onto the
+                        // Compile the argument, `MoveParameter` will move the result of the expression onto the
                         // parameter stack to be passed into the function.
                         argument.compile_to_vm(vm)?;
                         vm.write_opcode(OpCode::MoveParameter);

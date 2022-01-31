@@ -91,6 +91,7 @@ impl Function for ParseRegex {
     fn compile_argument(
         &self,
         _args: &[(&'static str, Option<FunctionArgument>)],
+        _info: &FunctionCompileContext,
         name: &str,
         expr: Option<&expression::Expr>,
     ) -> CompiledArgument {
@@ -113,7 +114,7 @@ impl Function for ParseRegex {
         }
     }
 
-    fn call(
+    fn call_by_vm(
         &self,
         _ctx: &mut Context,
         args: &mut VmArgumentList,
