@@ -9,8 +9,8 @@ use ansi_term::Colour;
 use chrono::{DateTime, SecondsFormat, Utc};
 use chrono_tz::Tz;
 use glob::glob;
-use shared::TimeZone;
 use structopt::StructOpt;
+use vector_common::TimeZone;
 use vrl::{diagnostic::Formatter, state, Runtime, Terminate, Value};
 use vrl_tests::{docs, Test};
 
@@ -322,7 +322,7 @@ fn run_vrl(
 #[cfg(not(feature = "vrl-vm"))]
 fn run_vrl(
     mut runtime: Runtime,
-    _functions: Vec<Box<dyn vrl::Function + Send + Sync>>,
+    _functions: Vec<Box<dyn vrl::Function>>,
     program: vrl::Program,
     test: &mut Test,
     timezone: TimeZone,
