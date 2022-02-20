@@ -263,7 +263,7 @@ impl Event {
         match self {
             Self::Log(log) => log.with_batch_notifier(batch).into(),
             Self::Metric(metric) => metric.with_batch_notifier(batch).into(),
-            Self::Trace(trace) => trace.with_batch_notifier(batch).into(),
+            Self::Trace(trace) => Self::Trace(trace.with_batch_notifier(batch)),
         }
     }
 
@@ -271,7 +271,7 @@ impl Event {
         match self {
             Self::Log(log) => log.with_batch_notifier_option(batch).into(),
             Self::Metric(metric) => metric.with_batch_notifier_option(batch).into(),
-            Self::Trace(trace) => trace.with_batch_notifier_option(batch).into(),
+            Self::Trace(trace) => Self::Trace(trace.with_batch_notifier_option(batch)),
         }
     }
 }
